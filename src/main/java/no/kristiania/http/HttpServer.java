@@ -63,6 +63,16 @@ public class HttpServer {
                 // Write the response back to the client
                 clientSocket.getOutputStream().write(response.getBytes());
                 return;
+            } else if (requestPath.equals("/members")) {
+                QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
+                if (queryString.getParameter("full_name") != null) {
+                    String fullName = "";
+                    fullName = queryString.getParameter("full_name");
+                }
+                if (queryString.getParameter("email_address") != null) {
+                    String emailAddress = "";
+                    emailAddress = queryString.getParameter("email_address");
+                }
             }
 
             statusCode = "200";
