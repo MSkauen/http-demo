@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Date;
 
+import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HttpServerTest {
@@ -74,4 +75,19 @@ class HttpServerTest {
         HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt");
         assertEquals(404, client.getStatusCode());
     }
+    /*
+    @Test
+    void shouldReturnMemberFromDisk() throws IOException {
+        HttpServer server = new HttpServer(10008);
+        File contentRoot = new File("target/");
+        server.setContentRoot(contentRoot);
+
+        String fileContent = "Test" + "\r\n" + "test@gmail.com" + "\r\n" + "\r\n";
+        Files.writeString(new File(contentRoot, "member.txt").toPath(), fileContent);
+
+        HttpClient client = new HttpClient("localhost", 10008, "/members?full_name=test&email_address=test%40gmail.com");
+        assertEquals(fileContent, client.getResponseBody());
+        //assertEquals("text/plain", client.getResponseHeader("Content-Type"));
+    }
+     */
 }

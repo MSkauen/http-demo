@@ -5,6 +5,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+
+import static java.nio.file.StandardOpenOption.APPEND;
 
 public class HttpServer {
 
@@ -40,9 +43,13 @@ public class HttpServer {
         String statusCode = "200";
         String body = "Hello World";
 
+        String fullName = "";
+        String emailAddress = "";
+
         int questionPos = requestTarget.indexOf('?');
 
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
+        System.out.println("PATH: "+requestPath);
         if (questionPos != -1) {
             // body=hello
             QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
@@ -52,7 +59,7 @@ public class HttpServer {
             if (queryString.getParameter("body") != null) {
                 body = queryString.getParameter("body");
             }
-        } else if (!requestPath.equals("/echo")) {
+        } if (!requestPath.equals("/echo")) {
             File file = new File(contentRoot, requestPath);
             if (!file.exists()){
                 body = file + " does not exist";
@@ -63,7 +70,22 @@ public class HttpServer {
                 // Write the response back to the client
                 clientSocket.getOutputStream().write(response.getBytes());
                 return;
+            } else if (requestPath.equals("/members")) {
+                QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
+
+                if (queryString.getParameter("full_name") != null) {
+                    fullName = queryString.getParameter("full_name");
+                }
+                if (queryString.getParameter("email_address") != null) {
+                    emailAddress = queryString.getParameter("email_address");
+                }
+
+                String fileContent = fullName + "\r\n" + emailAddress + "\r\n" + "\r\n";
+                Files.writeString(new File(contentRoot, "members").toPath(), fileContent, APPEND);
             }
+
+
+            // System.out.println(fullName + " " + emailAddress);
 
             statusCode = "200";
             String contentType = "text/plain";
