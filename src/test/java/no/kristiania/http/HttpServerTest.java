@@ -83,7 +83,7 @@ class HttpServerTest {
         String fileContent = "Test" + "\r\n" + "test@gmail.com" + "\r\n" + "\r\n";
         Files.writeString(new File(contentRoot, "member.txt").toPath(), fileContent);
 
-        HttpClient client = new HttpClient("localhost", 10008, "/members?full_name=test&email_address=epost%40gmail.com");
+        HttpClient client = new HttpClient("localhost", 10008, "/members?full_name=test&email_address=test%40gmail.com");
         assertEquals(fileContent, client.getResponseBody());
         //assertEquals("text/plain", client.getResponseHeader("Content-Type"));
     }
