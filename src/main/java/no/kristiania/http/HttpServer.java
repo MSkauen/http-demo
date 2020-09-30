@@ -49,7 +49,6 @@ public class HttpServer {
 
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
         if (questionPos != -1) {
-
             QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
             if (queryString.getParameter("status") != null) {
                 statusCode = queryString.getParameter("status");
@@ -78,6 +77,9 @@ public class HttpServer {
 
                 clientSocket.getOutputStream().write(response.getBytes());
                 return;
+            }
+            if (requestPath.equals("/")) {
+                file = new File(contentRoot, "/index.html");
             }
 
             statusCode = "200";
