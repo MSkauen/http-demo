@@ -15,28 +15,28 @@ class HttpServerTest {
     @Test
     void shouldReturnSuccessfulStatusCode() throws IOException {
         new HttpServer(10001);
-        HttpClient client = new HttpClient("localhost", 10001, "/echo");
+        HttpClient client = new HttpClient("localhost", 10001, "/echo", "GET");
         assertEquals(200, client.getStatusCode());
     }
 
     @Test
     void shouldReturnUnsuccessfulStatusCode() throws IOException {
         new HttpServer(10002);
-        HttpClient client = new HttpClient("localhost", 10002, "/echo?status=404");
+        HttpClient client = new HttpClient("localhost", 10002, "/echo?status=404", "GET");
         assertEquals(404, client.getStatusCode());
     }
 
     @Test
     void shouldReturnContentLength() throws IOException {
         new HttpServer(10003);
-        HttpClient client = new HttpClient("localhost", 10003, "/echo?body=HelloWorld");
+        HttpClient client = new HttpClient("localhost", 10003, "/echo?body=HelloWorld", "GET");
         assertEquals("10", client.getResponseHeader("Content-Length"));
     }
 
     @Test
     void shouldReturnResponseBody() throws IOException {
         new HttpServer(10004);
-        HttpClient client = new HttpClient("localhost", 10004, "/echo?body=HelloWorld");
+        HttpClient client = new HttpClient("localhost", 10004, "/echo?body=HelloWorld", "GET");
         assertEquals("HelloWorld", client.getResponseBody());
     }
 
@@ -49,7 +49,7 @@ class HttpServerTest {
         String fileContent = "Hello World " + new Date();
         Files.writeString(new File(contentRoot, "test.txt").toPath(), fileContent);
 
-        HttpClient client = new HttpClient("localhost", 10005, "/test.txt");
+        HttpClient client = new HttpClient("localhost", 10005, "/test.txt", "GET");
         assertEquals(fileContent, client.getResponseBody());
         assertEquals("text/plain", client.getResponseHeader("Content-Type"));
     }
@@ -62,7 +62,7 @@ class HttpServerTest {
 
         Files.writeString(new File(contentRoot, "index.html").toPath(), "<h2>Hello World</h2>");
 
-        HttpClient client = new HttpClient("localhost", 10006, "/index.html");
+        HttpClient client = new HttpClient("localhost", 10006, "/index.html", "GET");
         assertEquals("text/html", client.getResponseHeader("Content-Type"));
     }
 
@@ -72,7 +72,7 @@ class HttpServerTest {
         File contentRoot = new File("target/");
         server.setContentRoot(contentRoot);
 
-        HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt");
+        HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt", "GET");
         assertEquals(404, client.getStatusCode());
     }
     /*

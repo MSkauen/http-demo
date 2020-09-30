@@ -17,6 +17,7 @@ public class HttpServer {
     public HttpServer(int port) throws IOException {
 
         ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
 
         new Thread (() -> {
             while (true) {
@@ -38,6 +39,7 @@ public class HttpServer {
         System.out.println(requestLine);
 
         String requestTarget = requestLine.split(" ")[1];
+        String requestMethod = requestLine.split(" ")[0];
 
         String statusCode = "200";
         String body = "Hello World";
@@ -48,6 +50,7 @@ public class HttpServer {
         int questionPos = requestTarget.indexOf('?');
 
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
+
         if (questionPos != -1) {
             QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
             if (queryString.getParameter("status") != null) {
