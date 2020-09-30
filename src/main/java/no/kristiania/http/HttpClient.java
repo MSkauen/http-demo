@@ -12,13 +12,13 @@ public class HttpClient {
     private String responseBody;
 
     // Constructor - det som kalles når vi sier new
-    public HttpClient(final String hostname, int port, final String requestTarget) throws IOException {
+    public HttpClient(final String hostname, int port, final String requestTarget, final String requestMethod) throws IOException {
         // Connect til serven
         Socket socket = new Socket(hostname, port);
 
         // HTTP Request consists of request line + 0 or more request headers
         //  request line consists of "verb" (GET, POST, PUT) request target ("/echo", "/echo?status=404"), protocol (HTTP/1.1)
-        String request = "GET " + requestTarget + " HTTP/1.1\r\n" +
+        String request = requestMethod + " " + requestTarget + " HTTP/1.1\r\n" +
                 // request header consists of "name: value"
                 // header host brukes for å angi hostnavnet i URL
                 "Host: " + hostname + "\r\n" +
@@ -74,7 +74,7 @@ public class HttpClient {
     }
 
     public static void main(String[] args) throws IOException {
-        HttpClient client = new HttpClient("urlecho.appspot.com", 80, "/echo?status=404&Content-Type=text%2Fhtml&body=Hello+world");
+        HttpClient client = new HttpClient("urlecho.appspot.com", 80, "/echo?status=404&Content-Type=text%2Fhtml&body=Hello+world", "GET");
         System.out.println(client.getResponseBody());
     }
 
