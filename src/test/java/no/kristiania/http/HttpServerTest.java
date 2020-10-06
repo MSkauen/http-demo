@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 
-import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HttpServerTest {
@@ -76,7 +75,7 @@ class HttpServerTest {
         HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt");
         assertEquals(404, client.getStatusCode());
     }
-  /*
+    /*
     @Test
     void shouldPostNewMember() throws IOException {
         HttpServer server = new HttpServer(10008);
