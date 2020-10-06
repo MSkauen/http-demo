@@ -12,21 +12,33 @@ public class HttpClient {
     private String responseBody;
 
     // Constructor - det som kalles når vi sier new
-    public HttpClient(final String hostname, int port, final String requestTarget, final String requestMethod) throws IOException {
+    public HttpClient(final String hostname, int port, final String requestTarget) throws IOException {
+        this(hostname, port, requestTarget, "GET", null);
+    }
+
+    // Constructor - det som kalles når vi sier new
+    public HttpClient(final String hostname, int port, final String requestTarget, final String httpMethod, String requestBody) throws IOException {
         // Connect til serven
         Socket socket = new Socket(hostname, port);
 
+        String contentLengthHeader = requestBody != null ? "Content-Length: " + requestBody + "\r\n" : "";
+
         // HTTP Request consists of request line + 0 or more request headers
         //  request line consists of "verb" (GET, POST, PUT) request target ("/echo", "/echo?status=404"), protocol (HTTP/1.1)
-        String request = requestMethod + " " + requestTarget + " HTTP/1.1\r\n" +
+        String request = httpMethod + " " + requestTarget + " HTTP/1.1\r\n" +
                 // request header consists of "name: value"
                 // header host brukes for å angi hostnavnet i URL
                 "Host: " + hostname + "\r\n" +
+                contentLengthHeader +
                 // request ends with empty line
                 "\r\n";
 
         // send request to server
         socket.getOutputStream().write(request.getBytes());
+
+        if(requestBody != null){
+            socket.getOutputStream().write(requestBody.getBytes());
+        }
 
         // The first line in the response is called status line or response line
         // response line consists of protocol ("HTTP/1.1") status code (200, 404, 401, 500) and status message
@@ -74,7 +86,7 @@ public class HttpClient {
     }
 
     public static void main(String[] args) throws IOException {
-        HttpClient client = new HttpClient("urlecho.appspot.com", 80, "/echo?status=404&Content-Type=text%2Fhtml&body=Hello+world", "GET");
+        HttpClient client = new HttpClient("urlecho.appspot.com", 80, "/echo?status=404&Content-Type=text%2Fhtml&body=Hello+world", "GET", "");
         System.out.println(client.getResponseBody());
     }
 
