@@ -34,13 +34,13 @@ public class HttpServer {
 
 
     private void handleRequest(Socket clientSocket) throws IOException {
-        String requestLine = HttpMessage.readLine(clientSocket);
+        HttpMessage request = new HttpMessage(clientSocket);
+        String requestLine = request.getStartLine();
         System.out.println(requestLine);
 
         String requestTarget = requestLine.split(" ")[1];
         String requestMethod = requestLine.split(" ")[0];
-        System.out.println("INDEX 0: " + requestMethod);
-        System.out.println("INDEX 1: " + requestTarget);
+
         String statusCode = "200";
         String body = "Hello World";
 
