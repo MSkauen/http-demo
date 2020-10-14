@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="pgr203innlevering2-mathiasharestad-martinsorhus" />
+        <module name="http-demo" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="pgr203innlevering2-mathiasharestad-martinsorhus" target="11" />
+      <module name="http-demo" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>groupId</groupId>
-    <artifactId>pgr203innlevering2-mathiasharestad-martinsorhus</artifactId>
+    <artifactId>http-demo</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <build>

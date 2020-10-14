@@ -6,11 +6,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.nio.file.StandardOpenOption.APPEND;
 
 public class HttpServer {
 
@@ -27,8 +24,8 @@ public class HttpServer {
 
                     Socket clientSocket = serverSocket.accept();
                     handleRequest(clientSocket);
+                    clientSocket.close();
                 } catch (IOException e) {
-
                     e.printStackTrace();
                 }
             }
@@ -37,12 +34,13 @@ public class HttpServer {
 
 
     private void handleRequest(Socket clientSocket) throws IOException {
-        String requestLine = HttpClient.readLine(clientSocket);
+        String requestLine = HttpMessage.readLine(clientSocket);
         System.out.println(requestLine);
 
         String requestTarget = requestLine.split(" ")[1];
         String requestMethod = requestLine.split(" ")[0];
-
+        System.out.println("INDEX 0: " + requestMethod);
+        System.out.println("INDEX 1: " + requestTarget);
         String statusCode = "200";
         String body = "Hello World";
 
@@ -115,7 +113,6 @@ public class HttpServer {
             // Write the response back to the client
             clientSocket.getOutputStream().write(response.getBytes());
             new FileInputStream(file).transferTo(clientSocket.getOutputStream());
-
         }
 
         String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
