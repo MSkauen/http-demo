@@ -15,7 +15,8 @@
 </div>
 </body>
 <script>
-fetch("/projectMembers")
+
+fetch("/members")
     .then(function(response) {
         return response.text();
     }).then(function(text) {
