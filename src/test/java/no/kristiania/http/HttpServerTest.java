@@ -6,8 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Date;
+import java.util.List;
 
-import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HttpServerTest {
@@ -15,28 +15,28 @@ class HttpServerTest {
     @Test
     void shouldReturnSuccessfulStatusCode() throws IOException {
         new HttpServer(10001);
-        HttpClient client = new HttpClient("localhost", 10001, "/echo", "GET");
+        HttpClient client = new HttpClient("localhost", 10001, "/echo");
         assertEquals(200, client.getStatusCode());
     }
 
     @Test
     void shouldReturnUnsuccessfulStatusCode() throws IOException {
         new HttpServer(10002);
-        HttpClient client = new HttpClient("localhost", 10002, "/echo?status=404", "GET");
+        HttpClient client = new HttpClient("localhost", 10002, "/echo?status=404");
         assertEquals(404, client.getStatusCode());
     }
 
     @Test
     void shouldReturnContentLength() throws IOException {
         new HttpServer(10003);
-        HttpClient client = new HttpClient("localhost", 10003, "/echo?body=HelloWorld", "GET");
+        HttpClient client = new HttpClient("localhost", 10003, "/echo?body=HelloWorld");
         assertEquals("10", client.getResponseHeader("Content-Length"));
     }
 
     @Test
     void shouldReturnResponseBody() throws IOException {
         new HttpServer(10004);
-        HttpClient client = new HttpClient("localhost", 10004, "/echo?body=HelloWorld", "GET");
+        HttpClient client = new HttpClient("localhost", 10004, "/echo?body=HelloWorld");
         assertEquals("HelloWorld", client.getResponseBody());
     }
 
@@ -49,7 +49,7 @@ class HttpServerTest {
         String fileContent = "Hello World " + new Date();
         Files.writeString(new File(contentRoot, "test.txt").toPath(), fileContent);
 
-        HttpClient client = new HttpClient("localhost", 10005, "/test.txt", "GET");
+        HttpClient client = new HttpClient("localhost", 10005, "/test.txt");
         assertEquals(fileContent, client.getResponseBody());
         assertEquals("text/plain", client.getResponseHeader("Content-Type"));
     }
@@ -62,7 +62,7 @@ class HttpServerTest {
 
         Files.writeString(new File(contentRoot, "index.html").toPath(), "<h2>Hello World</h2>");
 
-        HttpClient client = new HttpClient("localhost", 10006, "/index.html", "GET");
+        HttpClient client = new HttpClient("localhost", 10006, "/index.html");
         assertEquals("text/html", client.getResponseHeader("Content-Type"));
     }
 
@@ -72,22 +72,17 @@ class HttpServerTest {
         File contentRoot = new File("target/");
         server.setContentRoot(contentRoot);
 
-        HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt", "GET");
+        HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt");
         assertEquals(404, client.getStatusCode());
     }
     /*
     @Test
-    void shouldReturnMemberFromDisk() throws IOException {
+    void shouldPostNewMember() throws IOException {
         HttpServer server = new HttpServer(10008);
-        File contentRoot = new File("target/");
-        server.setContentRoot(contentRoot);
-
-        String fileContent = "Test" + "\r\n" + "test@gmail.com" + "\r\n" + "\r\n";
-        Files.writeString(new File(contentRoot, "member.txt").toPath(), fileContent);
-
-        HttpClient client = new HttpClient("localhost", 10008, "/members?full_name=test&email_address=test%40gmail.com");
-        assertEquals(fileContent, client.getResponseBody());
-        //assertEquals("text/plain", client.getResponseHeader("Content-Type"));
+        String requestBody = "full_name=test&email_address=epost%40gmail.com";
+        HttpClient client = new HttpClient("localhost", 10007, "/members", "POST", requestBody);
+        assertEquals(200, client.getStatusCode());
+        assertEquals(List.of("members"), server.getMembers());
     }
-     */
+    */
 }
