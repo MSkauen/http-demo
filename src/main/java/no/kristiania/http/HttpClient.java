@@ -86,7 +86,7 @@ public class HttpClient {
     }
 
     public static void main(String[] args) throws IOException {
-        HttpClient client = new HttpClient("urlecho.appspot.com", 80, "/echo?status=404&Content-Type=text%2Fhtml&body=Hello+world", "GET", "");
+        HttpClient client = new HttpClient("urlecho.appspot.com", 80, "/echo?status=404&Content-Type=text%2Fhtml&body=Hello+world", "GET");
         System.out.println(client.getResponseBody());
     }
 
