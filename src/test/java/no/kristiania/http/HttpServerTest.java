@@ -76,13 +76,13 @@ class HttpServerTest {
         assertEquals(404, client.getStatusCode());
     }
 
-    //@Test
+    @Test
     void shouldPostNewMember() throws IOException {
         HttpServer server = new HttpServer(10008);
         String requestBody = "full_name=test&email_address=epost%40gmail.com";
         HttpClient client = new HttpClient("localhost", 10008, "/api/members", "POST", requestBody);
         assertEquals(200, client.getStatusCode());
-        assertEquals(List.of("test"), server.getMembers());
+        assertEquals(List.of("\r\ntest\r\n" + "epost@gmail.com\r\n"), server.getMembers());
     }
 
 }

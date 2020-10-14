@@ -21,7 +21,7 @@ public class HttpClient {
         // Connect til serven
         Socket socket = new Socket(hostname, port);
 
-        String contentLengthHeader = requestBody != null ? "Content-Length: " + requestBody + "\r\n" : "";
+        String contentLengthHeader = requestBody != null ? "Content-Length: " + requestBody.length() + "\r\n" : "";
 
         // HTTP Request consists of request line + 0 or more request headers
         //  request line consists of "verb" (GET, POST, PUT) request target ("/echo", "/echo?status=404"), protocol (HTTP/1.1)

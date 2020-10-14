@@ -38,8 +38,8 @@ public class HttpServer {
         String requestLine = request.getStartLine();
         System.out.println(requestLine);
 
-        String requestTarget = requestLine.split(" ")[1];
         String requestMethod = requestLine.split(" ")[0];
+        String requestTarget = requestLine.split(" ")[1];
 
         String statusCode = "200";
         String body = "Hello World";
@@ -66,12 +66,28 @@ public class HttpServer {
                 if (queryString.getParameter("email_address") != null) {
                     emailAddress = queryString.getParameter("email_address");
                 }
-                String fileContent = java.net.URLDecoder.decode(fullName + "\r\n" + emailAddress + "\r\n" + "\r\n", StandardCharsets.UTF_8);
+                String fileContent = java.net.URLDecoder.decode("\r\n" + fullName + "\r\n" + emailAddress + "\r\n", StandardCharsets.UTF_8);
                 members.add(fileContent);
 
             }
-        }
-        if (requestPath.equals("/members")) {
+        } else if (requestMethod.equals("POST")){
+            QueryString requestParameters = new QueryString(request.getBody());
+            fullName = requestParameters.getParameter("full_name");
+            emailAddress = requestParameters.getParameter("email_address");
+
+            String requestParametersDecoded = java.net.URLDecoder.decode("\r\n" + fullName + "\r\n" + emailAddress + "\r\n", StandardCharsets.UTF_8);
+            members.add(requestParametersDecoded);
+
+            body = "Ok";
+            String response = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Length: " + body.length() + "\r\n" +
+                    "\r\n" +
+                    body;
+
+            clientSocket.getOutputStream().write(response.getBytes());
+            clientSocket.close();
+            return;
+        } else if (requestPath.equals("/api/members")) {
             body = members.toString();
             String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
                     "Content-Length: " + body.length() + "\r\n" +
@@ -79,9 +95,10 @@ public class HttpServer {
                     "\r\n" +
                     body;
             clientSocket.getOutputStream().write(response.getBytes());
+            clientSocket.close();
             return;
         }
-        if (!requestPath.equals("/echo")) {
+        else if (!requestPath.equals("/echo")) {
             File file = new File(contentRoot, requestPath);
             if (!file.exists()){
                 body = file + " does not exist";
@@ -91,6 +108,7 @@ public class HttpServer {
                         body;
 
                 clientSocket.getOutputStream().write(response.getBytes());
+                clientSocket.close();
                 return;
             }
 
@@ -113,6 +131,8 @@ public class HttpServer {
             // Write the response back to the client
             clientSocket.getOutputStream().write(response.getBytes());
             new FileInputStream(file).transferTo(clientSocket.getOutputStream());
+            clientSocket.close();
+            return;
         }
 
         String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
@@ -123,6 +143,7 @@ public class HttpServer {
 
         // Write the response back to the client
         clientSocket.getOutputStream().write(response.getBytes());
+        clientSocket.close();
     }
 
     public static void main(String[] args) throws IOException {
