@@ -5,46 +5,53 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
+import static java.nio.file.StandardOpenOption.APPEND;
 
 public class HttpServer {
 
     private File contentRoot;
 
     public HttpServer(int port) throws IOException {
-        // opens a entry point to our program for network clients
-        ServerSocket serverSocket = new ServerSocket(port);
 
-        // new threads excecutes the code in a separate 'thread'. that is in parallel
-        new Thread (() -> { // anonym function twith code that will be executed, equal to arrow function in javascript
+        ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
+
+        new Thread (() -> {
             while (true) {
                 try {
-                    // accepts waits for a client to try to connect - blocks
+
                     Socket clientSocket = serverSocket.accept();
                     handleRequest(clientSocket);
                 } catch (IOException e) {
-                    // if something went wrong - print out exception and try again
+
                     e.printStackTrace();
                 }
             }
-        }).start(); // starts the threads, so the code inside executes without blocking the current thread
+        }).start();
     }
 
-    // this code will be executed for each client
+
     private void handleRequest(Socket clientSocket) throws IOException {
         String requestLine = HttpClient.readLine(clientSocket);
         System.out.println(requestLine);
-        // Example "GET /echo?body=hello HTTP/1.1"
 
         String requestTarget = requestLine.split(" ")[1];
-        // Example "/echo?body=hello"
+        String requestMethod = requestLine.split(" ")[0];
+
         String statusCode = "200";
         String body = "Hello World";
+
+        String fullName = "";
+        String emailAddress = "";
 
         int questionPos = requestTarget.indexOf('?');
 
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
+
         if (questionPos != -1) {
-            // body=hello
             QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
             if (queryString.getParameter("status") != null) {
                 statusCode = queryString.getParameter("status");
@@ -52,7 +59,17 @@ public class HttpServer {
             if (queryString.getParameter("body") != null) {
                 body = queryString.getParameter("body");
             }
-        } else if (!requestPath.equals("/echo")) {
+            if (requestPath.equals("/members")) {
+                if (queryString.getParameter("full_name") != null) {
+                    fullName = queryString.getParameter("full_name");
+                }
+                if (queryString.getParameter("email_address") != null) {
+                    emailAddress = queryString.getParameter("email_address");
+                }
+                String fileContent = java.net.URLDecoder.decode(fullName + "\r\n" + emailAddress + "\r\n" + "\r\n", StandardCharsets.UTF_8);
+                Files.writeString(new File(contentRoot, "members").toPath(), fileContent, APPEND);
+            }
+        } if (!requestPath.equals("/echo")) {
             File file = new File(contentRoot, requestPath);
             if (!file.exists()){
                 body = file + " does not exist";
@@ -60,15 +77,20 @@ public class HttpServer {
                         "Content-Length: " + body.length() + "\r\n" +
                         "\r\n" +
                         body;
-                // Write the response back to the client
+
                 clientSocket.getOutputStream().write(response.getBytes());
                 return;
+            }
+            if (requestPath.equals("/")) {
+                file = new File(contentRoot, "/index.html");
             }
 
             statusCode = "200";
             String contentType = "text/plain";
             if (file.getName().endsWith(".html")){
                 contentType = "text/html";
+            } else if (file.getName().endsWith(".css")) {
+                contentType = "text/css";
             }
             String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
                     "Content-Length: " + file.length() + "\r\n" +
@@ -78,7 +100,6 @@ public class HttpServer {
             clientSocket.getOutputStream().write(response.getBytes());
             new FileInputStream(file).transferTo(clientSocket.getOutputStream());
         }
-
 
         String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
                 "Content-Length: " + body.length() + "\r\n" +
