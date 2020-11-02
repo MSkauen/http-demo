@@ -1,5 +1,6 @@
 package no.kristiania.http;
 
+import no.kristiania.database.User;
 import no.kristiania.database.UserDao;
 import org.flywaydb.core.Flyway;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -10,6 +11,7 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.List;
@@ -51,13 +53,21 @@ public class HttpServer {
 
         if (requestMethod.equals("POST")) {
             QueryString requestParameters = new QueryString(request.getBody());
+
             String firstName = requestParameters.getParameter("first_name");
             String lastName = requestParameters.getParameter("last_name");
             String emailAddress = requestParameters.getParameter("email_address");
 
-            if (firstName != null | lastName != null | emailAddress != null) {
-                String requestParametersDecoded = java.net.URLDecoder.decode(firstName + "," + lastName + "," + emailAddress, StandardCharsets.UTF_8);
-                userDao.insert(requestParametersDecoded);
+            if (firstName != null | lastName != null |  emailAddress != null) {
+                String firstNameDecoded = URLDecoder.decode(firstName, StandardCharsets.UTF_8);
+                String lastNameDecoded = URLDecoder.decode(lastName, StandardCharsets.UTF_8);
+                String emailAddressDecoded = URLDecoder.decode(emailAddress, StandardCharsets.UTF_8);
+
+                User user = new User();
+                user.setFirstName(firstNameDecoded);
+                user.setLastName(lastNameDecoded);
+                user.setEmailAddress(emailAddressDecoded);
+                userDao.insert(user);
             }
 
             String body = "Ok";
@@ -100,8 +110,11 @@ public class HttpServer {
             String contentType = "text/plain";
             if (requestPath.endsWith(".html")) {
                 contentType = "text/html";
-            } else if (requestPath.endsWith(".css")) {
+            }
+            if (requestPath.endsWith(".css")) {
                 contentType = "text/css";
+            } else if (requestPath.endsWith(".png")){
+                contentType = "image/png";
             }
 
             String response = "HTTP/1.1 200 OK\r\n" +
@@ -117,12 +130,8 @@ public class HttpServer {
     private void handleGetMembers(Socket clientSocket) throws IOException, SQLException {
         String body = "<ul>";
 
-        for (String member : userDao.list()) {
-            String firstName = member.split(",")[0];
-            String lastName = member.split(",")[1];
-            String email = member.split(",")[2];
-
-            body += "<li>" + firstName + " " + lastName + " " + email + "</li>";
+        for (User user : userDao.list()) {
+            body += "<li>" + user.getFirstName() + " " + user.getLastName() + " " + user.getEmailAddress() + "</li>";
         }
 
         body += "</ul>";
@@ -182,7 +191,7 @@ public class HttpServer {
         HttpServer server = new HttpServer(8080, dataSource);
     }
 
-    public List<String> getMembers() throws SQLException {
+    public List<User> getMembers() throws SQLException {
         return userDao.list();
     }
 }

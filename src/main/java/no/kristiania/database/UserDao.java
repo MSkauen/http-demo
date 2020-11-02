@@ -1,10 +1,7 @@
 package no.kristiania.database;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,30 +25,56 @@ public class UserDao {
          */
     }
 
-    public void insert(String user) throws SQLException {
-        String firstName = user.split(",")[0];
-        String lastName = user.split(",")[1];
-        String email = user.split(",")[2];
+    public void insert(User user) throws SQLException {
 
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO users (first_name, last_name, email) values (?, ?, ?)")) {
-                statement.setString(1, firstName);
-                statement.setString(2, lastName);
-                statement.setString(3, email);
-
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO users (first_name, last_name, email_address) values (?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS
+                    )) {
+                statement.setString(1, user.getFirstName());
+                statement.setString(2, user.getLastName());
+                statement.setString(3, user.getEmailAddress());
                 statement.executeUpdate();
+
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    generatedKeys.next();
+                    user.setId(generatedKeys.getLong("id"));
+                }
             }
         }
     }
 
-    public List<String> list() throws SQLException {
+    public User retrieve(Long id) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE id = ?")) {
+                statement.setLong(1, id);
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        return mapRowToUser(rs);
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        }
+    }
+
+    private User mapRowToUser(ResultSet rs) throws SQLException {
+        User user = new User();
+        user.setId(rs.getLong("id"));
+        user.setFirstName(rs.getString("first_name"));
+        user.setLastName(rs.getString("last_name"));
+        user.setEmailAddress(rs.getString("email_address"));
+        return user;
+    }
+
+    public List<User> list() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM users")) {
                 try (ResultSet rs = statement.executeQuery()) {
-                    List<String> users = new ArrayList<>();
+                    List<User> users = new ArrayList<>();
                     while (rs.next()) {
-                        users.add(rs.getString("first_name") + "," + rs.getString("last_name")
-                                + "," + rs.getString("email"));
+                        users.add(mapRowToUser(rs));
                     }
                     return users;
                 }
