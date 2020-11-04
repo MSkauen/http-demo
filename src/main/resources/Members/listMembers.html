@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <title>All members | KristianiaProject</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+    <body>
+        <div id="projectMembers"></div>
+
+        <div>
+            <a href="index.html">Return to members page</a>
+        </div>
+    </body>
+
+    <script>
+        fetch("/api/members")
+            .then(function(response) {
+                return response.text();
+            }).then(function(text) {
+            document.getElementById("projectMembers").innerHTML = text;
+        });
+    </script>
+</html>
