@@ -1,1 +1,0 @@
-create table users (first_name varchar)

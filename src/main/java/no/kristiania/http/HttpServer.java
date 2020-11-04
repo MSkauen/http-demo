@@ -1,7 +1,7 @@
 package no.kristiania.http;
 
-import no.kristiania.database.User;
-import no.kristiania.database.UserDao;
+import no.kristiania.database.Member;
+import no.kristiania.database.MemberDao;
 import org.flywaydb.core.Flyway;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
@@ -21,10 +21,10 @@ public class HttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
 
-    private UserDao userDao;
+    private MemberDao memberDao;
 
     public HttpServer(int port, DataSource datasSource) throws IOException {
-        userDao = new UserDao(datasSource);
+        memberDao = new MemberDao(datasSource);
         ServerSocket serverSocket = new ServerSocket(port);
         System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
         new Thread(() -> {
@@ -63,11 +63,11 @@ public class HttpServer {
                 String lastNameDecoded = URLDecoder.decode(lastName, StandardCharsets.UTF_8);
                 String emailAddressDecoded = URLDecoder.decode(emailAddress, StandardCharsets.UTF_8);
 
-                User user = new User();
-                user.setFirstName(firstNameDecoded);
-                user.setLastName(lastNameDecoded);
-                user.setEmailAddress(emailAddressDecoded);
-                userDao.insert(user);
+                Member member = new Member();
+                member.setFirstName(firstNameDecoded);
+                member.setLastName(lastNameDecoded);
+                member.setEmailAddress(emailAddressDecoded);
+                memberDao.insert(member);
             }
 
             String body = "Ok";
@@ -113,8 +113,11 @@ public class HttpServer {
             }
             if (requestPath.endsWith(".css")) {
                 contentType = "text/css";
-            } else if (requestPath.endsWith(".png")){
+            }
+            if (requestPath.endsWith(".png")){
                 contentType = "image/png";
+            } else if (requestPath.endsWith(".ico")){
+                contentType = "image/x-icon";
             }
 
             String response = "HTTP/1.1 200 OK\r\n" +
@@ -130,8 +133,8 @@ public class HttpServer {
     private void handleGetMembers(Socket clientSocket) throws IOException, SQLException {
         String body = "<ul>";
 
-        for (User user : userDao.list()) {
-            body += "<li>" + user.getFirstName() + " " + user.getLastName() + " " + user.getEmailAddress() + "</li>";
+        for (Member member : memberDao.list()) {
+            body += "<li>" + member.getFirstName() + " " + member.getLastName() + " " + member.getEmailAddress() + "</li>";
         }
 
         body += "</ul>";
@@ -191,7 +194,7 @@ public class HttpServer {
         HttpServer server = new HttpServer(8080, dataSource);
     }
 
-    public List<User> getMembers() throws SQLException {
-        return userDao.list();
+    public List<Member> getMembers() throws SQLException {
+        return memberDao.list();
     }
 }

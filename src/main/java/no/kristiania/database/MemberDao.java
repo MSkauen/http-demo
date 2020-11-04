@@ -5,11 +5,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDao {
+public class MemberDao {
 
     private DataSource dataSource;
 
-    public UserDao(DataSource dataSource) {
+    public MemberDao(DataSource dataSource) {
 
         this.dataSource = dataSource;
     }
@@ -25,28 +25,28 @@ public class UserDao {
          */
     }
 
-    public void insert(User user) throws SQLException {
+    public void insert(Member member) throws SQLException {
 
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO users (first_name, last_name, email_address) values (?, ?, ?)",
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO members (first_name, last_name, email_address) values (?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
                     )) {
-                statement.setString(1, user.getFirstName());
-                statement.setString(2, user.getLastName());
-                statement.setString(3, user.getEmailAddress());
+                statement.setString(1, member.getFirstName());
+                statement.setString(2, member.getLastName());
+                statement.setString(3, member.getEmailAddress());
                 statement.executeUpdate();
 
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     generatedKeys.next();
-                    user.setId(generatedKeys.getLong("id"));
+                    member.setId(generatedKeys.getLong("id"));
                 }
             }
         }
     }
 
-    public User retrieve(Long id) throws SQLException {
+    public Member retrieve(Long id) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE id = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM members WHERE id = ?")) {
                 statement.setLong(1, id);
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
@@ -59,24 +59,24 @@ public class UserDao {
         }
     }
 
-    private User mapRowToUser(ResultSet rs) throws SQLException {
-        User user = new User();
-        user.setId(rs.getLong("id"));
-        user.setFirstName(rs.getString("first_name"));
-        user.setLastName(rs.getString("last_name"));
-        user.setEmailAddress(rs.getString("email_address"));
-        return user;
+    private Member mapRowToUser(ResultSet rs) throws SQLException {
+        Member member = new Member();
+        member.setId(rs.getLong("id"));
+        member.setFirstName(rs.getString("first_name"));
+        member.setLastName(rs.getString("last_name"));
+        member.setEmailAddress(rs.getString("email_address"));
+        return member;
     }
 
-    public List<User> list() throws SQLException {
+    public List<Member> list() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM users")) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM members")) {
                 try (ResultSet rs = statement.executeQuery()) {
-                    List<User> users = new ArrayList<>();
+                    List<Member> members = new ArrayList<>();
                     while (rs.next()) {
-                        users.add(mapRowToUser(rs));
+                        members.add(mapRowToUser(rs));
                     }
-                    return users;
+                    return members;
                 }
             }
         }

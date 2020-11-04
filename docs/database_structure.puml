@@ -1,0 +1,31 @@
+@startuml
+
+entity Member {
+    id
+    --
+    name
+}
+
+entity Project {
+    id
+    ..
+    name
+}
+entity Task {
+    id
+    project_id
+    --
+    name
+}
+
+entity Task_Members {
+    task_id
+    member_id[]
+    --
+    quantity
+}
+
+Project |o--o{ Task
+Task ||--o{ Task_Members
+Member ||--o{  Task_Members
+@enduml

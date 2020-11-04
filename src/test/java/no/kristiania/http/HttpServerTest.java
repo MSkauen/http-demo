@@ -1,7 +1,7 @@
 package no.kristiania.http;
 
-import no.kristiania.database.User;
-import no.kristiania.database.UserDao;
+import no.kristiania.database.Member;
+import no.kristiania.database.MemberDao;
 import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,19 +95,20 @@ class HttpServerTest {
         HttpClient client = new HttpClient("localhost", 10008, "/api/members", "POST", requestBody);
         assertEquals(200, client.getStatusCode());
         assertThat(server.getMembers())
-                .extracting(user -> user.getFirstName())
-                .contains("test");
+                .filteredOn(member -> member.getFirstName().equals("test"))
+                .isNotEmpty()
+                .satisfies(p -> assertThat(p.get(0).getLastName()).isEqualTo("bruker"));
     }
 
     @Test
     void shouldReturnExistingMembers() throws IOException, SQLException {
         HttpServer server = new HttpServer(10009, dataSource);
-        UserDao userDao = new UserDao(dataSource);
-        User user = new User();
-        user.setFirstName("Ola");
-        user.setLastName("Nordmann");
-        user.setEmailAddress("test@email.no");
-        userDao.insert(user);
+        MemberDao memberDao = new MemberDao(dataSource);
+        Member member = new Member();
+        member.setFirstName("Ola");
+        member.setLastName("Nordmann");
+        member.setEmailAddress("test@email.no");
+        memberDao.insert(member);
         HttpClient client = new HttpClient("localhost", 10009, "/api/members");
         assertThat(client.getResponseBody()).contains("<li>Ola Nordmann test@email.no</li>");
     }
