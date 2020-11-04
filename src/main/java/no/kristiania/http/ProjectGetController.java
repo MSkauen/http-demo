@@ -1,6 +1,5 @@
 package no.kristiania.http;
 
-import no.kristiania.database.Member;
 import no.kristiania.database.Project;
 import no.kristiania.database.ProjectDao;
 
