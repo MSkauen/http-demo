@@ -24,16 +24,18 @@ public class HttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
 
-    private Map<String, HttpController> controllers = Map.of(
-            "/api/projects/newProject", new ProjectPostController(),
-            "/api/projects/listProjects", new ProjectGetController()
-    );
+    private Map<String, HttpController> controllers;
 
     private MemberDao memberDao;
-    private ProjectDao projectDao;
 
     public HttpServer(int port, DataSource datasSource) throws IOException {
         memberDao = new MemberDao(datasSource);
+        ProjectDao projectDao = new ProjectDao(datasSource);
+        controllers = Map.of(
+                "/api/projects/newProject", new ProjectPostController(projectDao),
+                "/api/projects/listProjects", new ProjectGetController(projectDao)
+        );
+
         ServerSocket serverSocket = new ServerSocket(port);
         System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
         new Thread(() -> {
@@ -222,8 +224,5 @@ public class HttpServer {
 
     public List<Member> getMembers() throws SQLException {
         return memberDao.list();
-    }
-    public List<Project> getProjects() throws SQLException {
-        return projectDao.list();
     }
 }

@@ -10,21 +10,28 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 public class ProjectPostController implements HttpController {
+
     private ProjectDao projectDao;
 
+    public ProjectPostController(ProjectDao projectDao) {
+
+        this.projectDao = projectDao;
+    }
+
     @Override
-    public void handle(HttpMessage request, Socket clientSocket) throws IOException {
-        /*
+    public void handle(HttpMessage request, Socket clientSocket) throws IOException, SQLException {
+
         QueryString requestParameters = new QueryString(request.getBody());
 
-        String projectName = requestParameters.getParameter("project_name");
-        String projectNameDecoded = URLDecoder.decode(projectName, StandardCharsets.UTF_8);
-
         Project project = new Project();
+        String projectNameDecoded = URLDecoder.decode(requestParameters.getParameter("project_name"), StandardCharsets.UTF_8);
+        String projectColorDecoded = URLDecoder.decode(requestParameters.getParameter("project_color"), StandardCharsets.UTF_8);
+
+        project.setColor(projectColorDecoded);
         project.setName(projectNameDecoded);
-        project.setColor(requestParameters.getParameter("project_color"));
+
         projectDao.insert(project);
-*/
+
         String body = "Ok";
         String response = "HTTP/1.1 200 OK\r\n" +
                 "Content-Length: " + body.length() + "\r\n" +

@@ -14,7 +14,7 @@
         </div>
     </body>
     <script>
-        fetch("/api/projects")
+        fetch("/api/projects/listProjects")
             .then(function(response) {
                 return response.text();
             }).then(function(text) {
