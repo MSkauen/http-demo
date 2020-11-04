@@ -92,7 +92,7 @@ class HttpServerTest {
     void shouldPostNewMember() throws IOException, SQLException {
         HttpServer server = new HttpServer(10008, dataSource);
         String requestBody = "first_name=test&last_name=bruker&email_address=test@email.no";
-        HttpClient client = new HttpClient("localhost", 10008, "/api/members", "POST", requestBody);
+        HttpClient client = new HttpClient("localhost", 10008, "/api/members/newMember", "POST", requestBody);
         assertEquals(200, client.getStatusCode());
         assertThat(server.getMembers())
                 .filteredOn(member -> member.getFirstName().equals("test"))
@@ -109,7 +109,17 @@ class HttpServerTest {
         member.setLastName("Nordmann");
         member.setEmailAddress("test@email.no");
         memberDao.insert(member);
-        HttpClient client = new HttpClient("localhost", 10009, "/api/members");
+        HttpClient client = new HttpClient("localhost", 10009, "/api/members/listMembers");
         assertThat(client.getResponseBody()).contains("<li>Ola Nordmann test@email.no</li>");
+    }
+    @Test
+    void shouldPostNewProject() throws IOException {
+        HttpServer server = new HttpServer(10010, dataSource);
+        String requestBody = "project_name=test&project_color=#5a3434";
+        HttpClient postClient = new HttpClient("localhost", 10010, "/api/projects/newProject", "POST", requestBody);
+        assertEquals(200, postClient.getStatusCode());
+
+        HttpClient getClient = new HttpClient("localhost", 10010, "/api/projects/listProjects");
+        assertThat(getClient.getResponseBody()).contains("<li>test #5a3434</li>");
     }
 }

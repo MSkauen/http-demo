@@ -2,6 +2,8 @@ package no.kristiania.http;
 
 import no.kristiania.database.Member;
 import no.kristiania.database.MemberDao;
+import no.kristiania.database.Project;
+import no.kristiania.database.ProjectDao;
 import org.flywaydb.core.Flyway;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
@@ -15,13 +17,20 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public class HttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
 
+    private Map<String, HttpController> controllers = Map.of(
+            "/api/projects/newProject", new ProjectPostController(),
+            "/api/projects/listProjects", new ProjectGetController()
+    );
+
     private MemberDao memberDao;
+    private ProjectDao projectDao;
 
     public HttpServer(int port, DataSource datasSource) throws IOException {
         memberDao = new MemberDao(datasSource);
@@ -52,44 +61,61 @@ public class HttpServer {
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
 
         if (requestMethod.equals("POST")) {
-            QueryString requestParameters = new QueryString(request.getBody());
-
-            String firstName = requestParameters.getParameter("first_name");
-            String lastName = requestParameters.getParameter("last_name");
-            String emailAddress = requestParameters.getParameter("email_address");
-
-            if (firstName != null | lastName != null |  emailAddress != null) {
-                String firstNameDecoded = URLDecoder.decode(firstName, StandardCharsets.UTF_8);
-                String lastNameDecoded = URLDecoder.decode(lastName, StandardCharsets.UTF_8);
-                String emailAddressDecoded = URLDecoder.decode(emailAddress, StandardCharsets.UTF_8);
-
-                Member member = new Member();
-                member.setFirstName(firstNameDecoded);
-                member.setLastName(lastNameDecoded);
-                member.setEmailAddress(emailAddressDecoded);
-                memberDao.insert(member);
+            if (requestPath.equals("/api/members/newMember")) {
+                handlePostMember(clientSocket, request);
+            } else {
+               getController(requestPath).handle(request, clientSocket);
             }
-
-            String body = "Ok";
-            String response = "HTTP/1.1 200 OK\r\n" +
-                    "Content-Length: " + body.length() + "\r\n" +
-                    "Connection: close\r\n" +
-                    "\r\n" +
-                    body;
-
-            clientSocket.getOutputStream().write(response.getBytes());
         } else {
             if (requestPath.equals("/echo")) {
                 handleEchoRequest(clientSocket, requestTarget, questionPos);
             } else if (requestPath.equals("/")){
                 handleFileRequest(clientSocket, "/index.html");
-            } else if (requestPath.equals("/api/members")) {
+            } else if (requestPath.equals("/api/members/listMembers")) {
                 handleGetMembers(clientSocket);
             } else {
-                handleFileRequest(clientSocket, requestPath);
+                HttpController controller = controllers.get(requestPath);
+                if (controller != null) {
+                    controller.handle(request, clientSocket);
+                } else {
+                    handleFileRequest(clientSocket, requestPath);
+                }
             }
         }
 
+    }
+
+    private HttpController getController(String requestPath) {
+        return controllers.get(requestPath);
+    }
+
+    private void handlePostMember(Socket clientSocket, HttpMessage request) throws SQLException, IOException {
+        QueryString requestParameters = new QueryString(request.getBody());
+
+        String firstName = requestParameters.getParameter("first_name");
+        String lastName = requestParameters.getParameter("last_name");
+        String emailAddress = requestParameters.getParameter("email_address");
+
+        if (firstName != null | lastName != null |  emailAddress != null) {
+            String firstNameDecoded = URLDecoder.decode(firstName, StandardCharsets.UTF_8);
+            String lastNameDecoded = URLDecoder.decode(lastName, StandardCharsets.UTF_8);
+            String emailAddressDecoded = URLDecoder.decode(emailAddress, StandardCharsets.UTF_8);
+
+            Member member = new Member();
+            member.setFirstName(firstNameDecoded);
+            member.setLastName(lastNameDecoded);
+            member.setEmailAddress(emailAddressDecoded);
+            memberDao.insert(member);
+        }
+
+        String body = "Ok";
+        String response = "HTTP/1.1 200 OK\r\n" +
+                "Content-Length: " + body.length() + "\r\n" +
+                "Connection: close\r\n" +
+                "\r\n" +
+                body;
+
+        clientSocket.getOutputStream().write(response.getBytes());
     }
 
     private void handleFileRequest(Socket clientSocket, String requestPath) throws IOException {
@@ -196,5 +222,8 @@ public class HttpServer {
 
     public List<Member> getMembers() throws SQLException {
         return memberDao.list();
+    }
+    public List<Project> getProjects() throws SQLException {
+        return projectDao.list();
     }
 }

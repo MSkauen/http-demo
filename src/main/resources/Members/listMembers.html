@@ -15,7 +15,7 @@
     </body>
 
     <script>
-        fetch("/api/members")
+        fetch("/api/members/listMembers")
             .then(function(response) {
                 return response.text();
             }).then(function(text) {
