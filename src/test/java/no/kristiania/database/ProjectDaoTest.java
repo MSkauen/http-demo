@@ -6,12 +6,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
+import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProjectDaoTest {
 
     private ProjectDao projectDao;
+    private final Random random = new Random();
 
     @BeforeEach
     void setUp() {
@@ -38,12 +40,23 @@ public class ProjectDaoTest {
         projectDao.insert(exampleProject());
         Project project = exampleProject();
         projectDao.insert(project);
-
+        assertThat(project).hasNoNullFieldsOrProperties();
         assertThat(projectDao.retrieve(project.getId()))
                 .usingRecursiveComparison()
                 .isEqualTo(project);
     }
     private Project exampleProject() {
-        return new Project();
+        Project project = new Project();
+        project.setName(exampleProjectName());
+        project.setColor(exampleProjectColor());
+        return project;
+    }
+    private String exampleProjectName(){
+        String[] projectNameOptions = {"Task", "Projects", "Test", "Names"};
+        return projectNameOptions[random.nextInt(projectNameOptions.length)];
+    }
+    private String exampleProjectColor(){
+        String[] projectNameOptions = {"#d2caca", "#5a3434", "#1d901d", "#751d90"};
+        return projectNameOptions[random.nextInt(projectNameOptions.length)];
     }
 }
