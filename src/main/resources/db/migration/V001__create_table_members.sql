@@ -1,1 +1,1 @@
-create table members (first_name varchar)
+create table members (id serial primary key)

@@ -50,7 +50,7 @@ public class MemberDao {
                 statement.setLong(1, id);
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
-                        return mapRowToUser(rs);
+                        return mapRowToMember(rs);
                     } else {
                         return null;
                     }
@@ -59,7 +59,7 @@ public class MemberDao {
         }
     }
 
-    private Member mapRowToUser(ResultSet rs) throws SQLException {
+    private Member mapRowToMember(ResultSet rs) throws SQLException {
         Member member = new Member();
         member.setId(rs.getLong("id"));
         member.setFirstName(rs.getString("first_name"));
@@ -74,7 +74,7 @@ public class MemberDao {
                 try (ResultSet rs = statement.executeQuery()) {
                     List<Member> members = new ArrayList<>();
                     while (rs.next()) {
-                        members.add(mapRowToUser(rs));
+                        members.add(mapRowToMember(rs));
                     }
                     return members;
                 }
