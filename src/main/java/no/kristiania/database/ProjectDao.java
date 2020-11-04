@@ -36,7 +36,8 @@ public class ProjectDao {
 
     public void insert(Project project) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO projects (project_name, project_color) values (?, ?)",
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO projects (project_name, project_color) values (?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             )) {
                 statement.setString(1, project.getName());
