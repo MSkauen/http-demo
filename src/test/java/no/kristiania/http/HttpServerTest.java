@@ -19,45 +19,41 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class HttpServerTest {
 
     private final JdbcDataSource dataSource = new JdbcDataSource();
+    private HttpServer server;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         dataSource.setURL("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-
         Flyway.configure().dataSource(dataSource).load().migrate();
+        server = new HttpServer(0, dataSource);
     }
 
     @Test
     void shouldReturnSuccessfulStatusCode() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         HttpClient client = new HttpClient("localhost", server.getPort(), "/echo");
         assertEquals(200, client.getStatusCode());
     }
 
     @Test
     void shouldReturnUnsuccessfulStatusCode() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         HttpClient client = new HttpClient("localhost", server.getPort(), "/echo?status=404");
         assertEquals(404, client.getStatusCode());
     }
 
     @Test
     void shouldReturnContentLength() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         HttpClient client = new HttpClient("localhost", server.getPort(), "/echo?body=HelloWorld");
         assertEquals("10", client.getResponseHeader("Content-Length"));
     }
 
     @Test
     void shouldReturnResponseBody() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         HttpClient client = new HttpClient("localhost", server.getPort(), "/echo?body=HelloWorld");
         assertEquals("HelloWorld", client.getResponseBody());
     }
 
     @Test
     void shouldReturnFileFromDisk() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         File contentRoot = new File("target/test-classes");
 
         String fileContent = "Hello World " + new Date();
@@ -70,7 +66,6 @@ class HttpServerTest {
 
     @Test
     void shouldReturnCorrectContentType() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         File contentRoot = new File("target/test-classes");
 
         Files.writeString(new File(contentRoot, "index.html").toPath(), "<h2>Hello World</h2>");
@@ -81,7 +76,6 @@ class HttpServerTest {
 
     @Test
     void shouldReturn404IfFileNotFound() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         File contentRoot = new File("target/test-classes");
 
         HttpClient client = new HttpClient("localhost", server.getPort(), "/notFound.txt");
@@ -90,7 +84,6 @@ class HttpServerTest {
 
     @Test
     void shouldPostNewMember() throws IOException, SQLException {
-        HttpServer server = new HttpServer(0, dataSource);
         String requestBody = "first_name=test&last_name=bruker&email_address=test@email.no";
         HttpClient client = new HttpClient("localhost", server.getPort(), "/api/members/newMember", "POST", requestBody);
         assertEquals(200, client.getStatusCode());
@@ -102,7 +95,6 @@ class HttpServerTest {
 
     @Test
     void shouldReturnExistingMembers() throws IOException, SQLException {
-        HttpServer server = new HttpServer(0, dataSource);
         MemberDao memberDao = new MemberDao(dataSource);
         Member member = new Member();
         member.setFirstName("Ola");
@@ -114,7 +106,6 @@ class HttpServerTest {
     }
     @Test
     void shouldPostNewProject() throws IOException {
-        HttpServer server = new HttpServer(0, dataSource);
         String requestBody = "project_name=test&project_color=#5a3434";
         HttpClient postClient = new HttpClient("localhost", server.getPort(), "/api/projects/newProject", "POST", requestBody);
         assertEquals(200, postClient.getStatusCode());
