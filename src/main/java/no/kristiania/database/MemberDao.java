@@ -14,17 +14,6 @@ public class MemberDao {
         this.dataSource = dataSource;
     }
 
-    public static void main(String[] args){
-        /*
-        System.out.println("MAIN USERDAO");
-        PGSimpleDataSource dataSource = new PGSimpleDataSource();
-        dataSource.setURL("jdbc:postgresql://localhost:5432/kristianiausers");
-        dataSource.setUser("kristianiaroot");
-        dataSource.setPassword("ecrUHxEqSv");
-
-         */
-    }
-
     public void insert(Member member) throws SQLException {
 
         try (Connection connection = dataSource.getConnection()) {
@@ -59,15 +48,6 @@ public class MemberDao {
         }
     }
 
-    private Member mapRowToMember(ResultSet rs) throws SQLException {
-        Member member = new Member();
-        member.setId(rs.getLong("id"));
-        member.setFirstName(rs.getString("first_name"));
-        member.setLastName(rs.getString("last_name"));
-        member.setEmailAddress(rs.getString("email_address"));
-        return member;
-    }
-
     public List<Member> list() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM members")) {
@@ -80,5 +60,14 @@ public class MemberDao {
                 }
             }
         }
+    }
+
+    private Member mapRowToMember(ResultSet rs) throws SQLException {
+        Member member = new Member();
+        member.setId(rs.getLong("id"));
+        member.setFirstName(rs.getString("first_name"));
+        member.setLastName(rs.getString("last_name"));
+        member.setEmailAddress(rs.getString("email_address"));
+        return member;
     }
 }

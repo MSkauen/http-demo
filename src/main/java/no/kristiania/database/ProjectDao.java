@@ -12,28 +12,6 @@ public class ProjectDao {
         this.dataSource = dataSource;
     }
 
-    public List<Project> list() throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM projects")) {
-                try (ResultSet rs = statement.executeQuery()) {
-                    List<Project> projects = new ArrayList<>();
-                    while (rs.next()) {
-                        projects.add(mapRowToProject(rs));
-                    }
-                    return projects;
-                }
-            }
-        }
-    }
-
-    private Project mapRowToProject(ResultSet rs) throws SQLException {
-        Project project = new Project();
-        project.setId(rs.getLong("id"));
-        project.setName(rs.getString("project_name"));
-        project.setColor(rs.getString("project_color"));
-        return project;
-    }
-
     public void insert(Project project) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -65,5 +43,27 @@ public class ProjectDao {
                 }
             }
         }
+    }
+
+    public List<Project> list() throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM projects")) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    List<Project> projects = new ArrayList<>();
+                    while (rs.next()) {
+                        projects.add(mapRowToProject(rs));
+                    }
+                    return projects;
+                }
+            }
+        }
+    }
+
+    private Project mapRowToProject(ResultSet rs) throws SQLException {
+        Project project = new Project();
+        project.setId(rs.getLong("id"));
+        project.setName(rs.getString("project_name"));
+        project.setColor(rs.getString("project_color"));
+        return project;
     }
 }
