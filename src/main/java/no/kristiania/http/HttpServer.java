@@ -37,7 +37,9 @@ public class HttpServer {
         );
 
         serverSocket = new ServerSocket(port);
-        System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
+        logger.warn("Server started on port {}", serverSocket.getLocalPort());
+
+        System.out.println("Server running on port: " + serverSocket.getLocalPort() + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
         new Thread(() -> {
             while (true) {
                 try (Socket clientSocket = serverSocket.accept()) {
