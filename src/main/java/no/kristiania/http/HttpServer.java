@@ -25,19 +25,18 @@ public class HttpServer {
 
     private Map<String, HttpController> controllers;
 
-    private int port;
     private MemberDao memberDao;
+    private final ServerSocket serverSocket;
 
-    public HttpServer(int port, DataSource datasSource) throws IOException {
-        this.port = port;
-        memberDao = new MemberDao(datasSource);
-        ProjectDao projectDao = new ProjectDao(datasSource);
+    public HttpServer(int port, DataSource dataSource) throws IOException {
+        memberDao = new MemberDao(dataSource);
+        ProjectDao projectDao = new ProjectDao(dataSource);
         controllers = Map.of(
                 "/api/projects/newProject", new ProjectPostController(projectDao),
                 "/api/projects/listProjects", new ProjectGetController(projectDao)
         );
 
-        ServerSocket serverSocket = new ServerSocket(port);
+        serverSocket = new ServerSocket(port);
         System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
         new Thread(() -> {
             while (true) {
@@ -51,7 +50,7 @@ public class HttpServer {
     }
 
     public int getPort() {
-        return port;
+        return serverSocket.getLocalPort();
     }
 
     private void handleRequest(Socket clientSocket) throws IOException, SQLException {
