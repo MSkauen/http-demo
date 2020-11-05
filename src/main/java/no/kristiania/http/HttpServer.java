@@ -25,9 +25,11 @@ public class HttpServer {
 
     private Map<String, HttpController> controllers;
 
+    private int port;
     private MemberDao memberDao;
 
     public HttpServer(int port, DataSource datasSource) throws IOException {
+        this.port = port;
         memberDao = new MemberDao(datasSource);
         ProjectDao projectDao = new ProjectDao(datasSource);
         controllers = Map.of(
@@ -48,6 +50,9 @@ public class HttpServer {
         }).start();
     }
 
+    public int getPort() {
+        return port;
+    }
 
     private void handleRequest(Socket clientSocket) throws IOException, SQLException {
         HttpMessage request = new HttpMessage(clientSocket);

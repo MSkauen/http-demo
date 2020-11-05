@@ -29,29 +29,29 @@ class HttpServerTest {
 
     @Test
     void shouldReturnSuccessfulStatusCode() throws IOException {
-        new HttpServer(10001, dataSource);
-        HttpClient client = new HttpClient("localhost", 10001, "/echo");
+        HttpServer server = new HttpServer(10001, dataSource);
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/echo");
         assertEquals(200, client.getStatusCode());
     }
 
     @Test
     void shouldReturnUnsuccessfulStatusCode() throws IOException {
-        new HttpServer(10002, dataSource);
-        HttpClient client = new HttpClient("localhost", 10002, "/echo?status=404");
+        HttpServer server = new HttpServer(10002, dataSource);
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/echo?status=404");
         assertEquals(404, client.getStatusCode());
     }
 
     @Test
     void shouldReturnContentLength() throws IOException {
-        new HttpServer(10003, dataSource);
-        HttpClient client = new HttpClient("localhost", 10003, "/echo?body=HelloWorld");
+        HttpServer server = new HttpServer(10003, dataSource);
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/echo?body=HelloWorld");
         assertEquals("10", client.getResponseHeader("Content-Length"));
     }
 
     @Test
     void shouldReturnResponseBody() throws IOException {
-        new HttpServer(10004, dataSource);
-        HttpClient client = new HttpClient("localhost", 10004, "/echo?body=HelloWorld");
+        HttpServer server = new HttpServer(10004, dataSource);
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/echo?body=HelloWorld");
         assertEquals("HelloWorld", client.getResponseBody());
     }
 
@@ -63,7 +63,7 @@ class HttpServerTest {
         String fileContent = "Hello World " + new Date();
         Files.writeString(new File(contentRoot, "test.txt").toPath(), fileContent);
 
-        HttpClient client = new HttpClient("localhost", 10005, "/test.txt");
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/test.txt");
         assertEquals(fileContent, client.getResponseBody());
         assertEquals("text/plain", client.getResponseHeader("Content-Type"));
     }
@@ -75,7 +75,7 @@ class HttpServerTest {
 
         Files.writeString(new File(contentRoot, "index.html").toPath(), "<h2>Hello World</h2>");
 
-        HttpClient client = new HttpClient("localhost", 10006, "/index.html");
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/index.html");
         assertEquals("text/html", client.getResponseHeader("Content-Type"));
     }
 
@@ -84,7 +84,7 @@ class HttpServerTest {
         HttpServer server = new HttpServer(10007, dataSource);
         File contentRoot = new File("target/test-classes");
 
-        HttpClient client = new HttpClient("localhost", 10007, "/notFound.txt");
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/notFound.txt");
         assertEquals(404, client.getStatusCode());
     }
 
@@ -92,7 +92,7 @@ class HttpServerTest {
     void shouldPostNewMember() throws IOException, SQLException {
         HttpServer server = new HttpServer(10008, dataSource);
         String requestBody = "first_name=test&last_name=bruker&email_address=test@email.no";
-        HttpClient client = new HttpClient("localhost", 10008, "/api/members/newMember", "POST", requestBody);
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/api/members/newMember", "POST", requestBody);
         assertEquals(200, client.getStatusCode());
         assertThat(server.getMembers())
                 .filteredOn(member -> member.getFirstName().equals("test"))
@@ -109,17 +109,17 @@ class HttpServerTest {
         member.setLastName("Nordmann");
         member.setEmailAddress("test@email.no");
         memberDao.insert(member);
-        HttpClient client = new HttpClient("localhost", 10009, "/api/members/listMembers");
+        HttpClient client = new HttpClient("localhost", server.getPort(), "/api/members/listMembers");
         assertThat(client.getResponseBody()).contains("<li>Ola Nordmann test@email.no</li>");
     }
     @Test
     void shouldPostNewProject() throws IOException {
         HttpServer server = new HttpServer(10010, dataSource);
         String requestBody = "project_name=test&project_color=#5a3434";
-        HttpClient postClient = new HttpClient("localhost", 10010, "/api/projects/newProject", "POST", requestBody);
+        HttpClient postClient = new HttpClient("localhost", server.getPort(), "/api/projects/newProject", "POST", requestBody);
         assertEquals(200, postClient.getStatusCode());
 
-        HttpClient getClient = new HttpClient("localhost", 10010, "/api/projects/listProjects");
+        HttpClient getClient = new HttpClient("localhost", server.getPort(), "/api/projects/listProjects");
         assertThat(getClient.getResponseBody()).contains("<li>test #5a3434</li>");
     }
 }
