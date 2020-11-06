@@ -115,6 +115,8 @@ public class HttpServer {
             }
             if (requestPath.endsWith(".css")) {
                 contentType = "text/css";
+            } else if (requestPath.endsWith(".png")){
+                contentType = "image/png";
             }
             if (requestPath.endsWith(".png")){
                 contentType = "image/png";
