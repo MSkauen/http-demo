@@ -1,5 +1,7 @@
 package no.kristiania.http;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,29 +13,12 @@ public class QueryString {
             int equalsPos = parameter.indexOf('=');
             String key = parameter.substring(0, equalsPos);
             String value = parameter.substring(equalsPos+1);
-            this.parameters.put(key, value);
+            String valueDecoded = URLDecoder.decode(value, StandardCharsets.UTF_8);
+            this.parameters.put(key, valueDecoded);
         }
     }
 
     public String getParameter(String key) {
         return parameters.get(key);
-    }
-
-    public String getQueryString() {
-        StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
-            if (result.length() > 0) {
-                result.append("&");
-            }
-            result.append(parameter.getKey())
-                    .append("=")
-                    .append(parameter.getValue());
-        }
-
-        return "?" + result.toString();
-    }
-
-    public void addParameter(String key, String value) {
-        parameters.put(key, value);
     }
 }

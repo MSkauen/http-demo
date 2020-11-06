@@ -1,0 +1,1 @@
+create table members (id serial primary key)

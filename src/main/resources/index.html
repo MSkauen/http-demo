@@ -1,26 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <title>KristianiaProject</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Project view</h1>
+    <h1>Welcome</h1>
+    <h2>Menu</h2>
 
-<div id="projectMembers"></div>
-
-<div>
-    <a href="newWorker.html">Add new project member</a>
-</div>
+    <ul>
+        <li><a href="Members/index.html">Members page</a></li>
+        <li><a href="Tasks/index.html">Tasks page</a></li>
+        <li><a href="Projects/index.html">Projects page</a></li>
+    </ul>
 </body>
-<script>
-
-fetch("/members")
-    .then(function(response) {
-        return response.text();
-    }).then(function(text) {
-        document.getElementById("projectMembers").innerHTML = text;
-    });
-</script>
 </html>

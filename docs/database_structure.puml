@@ -1,0 +1,34 @@
+@startuml
+
+entity Project {
+    PK: project_id
+    ..
+    name
+}
+entity Task {
+    PK: task_id
+    FK: project_id
+    --
+    name
+}
+
+entity Task_Members {
+    PK: task_members
+    FK: task_id
+    FK: member_id[]
+    --
+    quantity
+}
+
+entity Member {
+    PK: member_id
+    --
+    first_name
+    last_name
+    email_address
+}
+
+Project ||--o{ Task
+Task ||--|| Task_Members
+Member }o--o{  Task_Members
+@enduml

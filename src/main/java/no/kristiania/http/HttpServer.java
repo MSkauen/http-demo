@@ -1,90 +1,103 @@
 package no.kristiania.http;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import no.kristiania.database.MemberDao;
+import no.kristiania.database.ProjectDao;
+import org.flywaydb.core.Flyway;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Properties;
 
 public class HttpServer {
 
-    private File contentRoot;
-    private List<String> members = new ArrayList<>();
+    private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
 
-    public HttpServer(int port) throws IOException {
+    private Map<String, HttpController> controllers;
 
-        ServerSocket serverSocket = new ServerSocket(port);
-        System.out.println("Server running on port: " + port + "\r\n Access server using any IP-Address:" + port + ", e.g 127.0.0.1:" + port + " or localhost:" + port);
-        new Thread (() -> {
+    private final ServerSocket serverSocket;
+
+    public HttpServer(int port, DataSource dataSource) throws IOException {
+        MemberDao memberDao = new MemberDao(dataSource);
+        ProjectDao projectDao = new ProjectDao(dataSource);
+        controllers = Map.of(
+                "/api/members/newMember", new MemberPostController(memberDao),
+                "/api/members/listMembers", new MemberGetController(memberDao),
+                "/api/projects/newProject", new ProjectPostController(projectDao),
+                "/api/projects/listProjects", new ProjectGetController(projectDao)
+        );
+
+        serverSocket = new ServerSocket(port);
+        logger.warn("Server started on port {}", serverSocket.getLocalPort());
+
+        System.out.println("Server running on port:" + serverSocket.getLocalPort()
+                + "\r\n Access server using any IP-Address:" + serverSocket.getLocalPort() + ", e.g http://127.0.0.1:"
+                + serverSocket.getLocalPort() + " or http://localhost:" + serverSocket.getLocalPort());
+        new Thread(() -> {
             while (true) {
-                try {
-
-                    Socket clientSocket = serverSocket.accept();
+                try (Socket clientSocket = serverSocket.accept()) {
                     handleRequest(clientSocket);
-                    clientSocket.close();
-                } catch (IOException e) {
+                } catch (IOException | SQLException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
     }
 
+    public int getPort() {
+        return serverSocket.getLocalPort();
+    }
 
-    private void handleRequest(Socket clientSocket) throws IOException {
-        String requestLine = HttpMessage.readLine(clientSocket);
+    private void handleRequest(Socket clientSocket) throws IOException, SQLException {
+        HttpMessage request = new HttpMessage(clientSocket);
+        String requestLine = request.getStartLine();
         System.out.println(requestLine);
 
-        String requestTarget = requestLine.split(" ")[1];
         String requestMethod = requestLine.split(" ")[0];
-        System.out.println("INDEX 0: " + requestMethod);
-        System.out.println("INDEX 1: " + requestTarget);
-        String statusCode = "200";
-        String body = "Hello World";
-
-        String fullName = "";
-        String emailAddress = "";
+        String requestTarget = requestLine.split(" ")[1];
 
         int questionPos = requestTarget.indexOf('?');
 
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
 
-        if (questionPos != -1) {
-            QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
-            if (queryString.getParameter("status") != null) {
-                statusCode = queryString.getParameter("status");
+        if (requestMethod.equals("POST")) {
+            HttpController controller = controllers.get(requestPath);
+            if (controller != null) {
+                controller.handle(request, clientSocket);
+            } else {
+               getController(requestPath).handle(request, clientSocket);
             }
-            if (queryString.getParameter("body") != null) {
-                body = queryString.getParameter("body");
+        } else {
+            if (requestPath.equals("/echo")) {
+                handleEchoRequest(clientSocket, requestTarget, questionPos);
+            } else if (requestPath.equals("/")){
+                handleFileRequest(clientSocket, "/index.html");
+            } else {
+                HttpController controller = controllers.get(requestPath);
+                if (controller != null) {
+                    controller.handle(request, clientSocket);
+                } else {
+                    handleFileRequest(clientSocket, requestPath);
+                }
             }
-            if (requestPath.equals("/members")) {
-                if (queryString.getParameter("full_name") != null) {
-                    fullName = queryString.getParameter("full_name");
-                }
-                if (queryString.getParameter("email_address") != null) {
-                    emailAddress = queryString.getParameter("email_address");
-                }
-                String fileContent = java.net.URLDecoder.decode(fullName + "\r\n" + emailAddress + "\r\n" + "\r\n", StandardCharsets.UTF_8);
-                members.add(fileContent);
+        }
 
-            }
-        }
-        if (requestPath.equals("/members")) {
-            body = members.toString();
-            String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
-                    "Content-Length: " + body.length() + "\r\n" +
-                    "Content-Type: text/plain\r\n" +
-                    "\r\n" +
-                    body;
-            clientSocket.getOutputStream().write(response.getBytes());
-            return;
-        }
-        if (!requestPath.equals("/echo")) {
-            File file = new File(contentRoot, requestPath);
-            if (!file.exists()){
-                body = file + " does not exist";
+    }
+
+    private HttpController getController(String requestPath) {
+        return controllers.get(requestPath);
+    }
+
+    private void handleFileRequest(Socket clientSocket, String requestPath) throws IOException {
+        try (InputStream inputStream = getClass().getResourceAsStream(requestPath)) {
+            if (inputStream == null) {
+                String body = requestPath + " does not exist";
                 String response = "HTTP/1.1 404 Not found\r\n" +
                         "Content-Length: " + body.length() + "\r\n" +
                         "\r\n" +
@@ -93,48 +106,74 @@ public class HttpServer {
                 clientSocket.getOutputStream().write(response.getBytes());
                 return;
             }
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            inputStream.transferTo(buffer);
 
-            if (requestPath.equals("/")) {
-                file = new File(contentRoot, "/index.html");
-            }
-
-            statusCode = "200";
             String contentType = "text/plain";
-            if (file.getName().endsWith(".html")){
+            if (requestPath.endsWith(".html")) {
                 contentType = "text/html";
-            } else if (file.getName().endsWith(".css")) {
+            }
+            if (requestPath.endsWith(".css")) {
                 contentType = "text/css";
             }
-            String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
-                    "Content-Length: " + file.length() + "\r\n" +
+            if (requestPath.endsWith(".png")){
+                contentType = "image/png";
+            } else if (requestPath.endsWith(".ico")){
+                contentType = "image/x-icon";
+            }
+
+            String response = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Length: " + buffer.toByteArray().length + "\r\n" +
+                    "Connection: close\r\n" +
                     "Content-Type: " + contentType + "\r\n" +
                     "\r\n";
-
-            // Write the response back to the client
             clientSocket.getOutputStream().write(response.getBytes());
-            new FileInputStream(file).transferTo(clientSocket.getOutputStream());
+            clientSocket.getOutputStream().write(buffer.toByteArray());
         }
+    }
 
+    private void handleEchoRequest(Socket clientSocket, String requestTarget, int questionPos) throws IOException {
+        String statusCode = "200";
+        String body = "Hello World";
+        if (questionPos != -1) {
+            QueryString queryString = new QueryString(requestTarget.substring(questionPos + 1));
+            if (queryString.getParameter("status") != null) {
+                statusCode = queryString.getParameter("status");
+            }
+            if (queryString.getParameter("body") != null) {
+                body = queryString.getParameter("body");
+            }
+        }
         String response = "HTTP/1.1 " + statusCode + " OK\r\n" +
                 "Content-Length: " + body.length() + "\r\n" +
                 "Content-Type: text/plain\r\n" +
+                "Connection: close\r\n" +
                 "\r\n" +
                 body;
 
         // Write the response back to the client
         clientSocket.getOutputStream().write(response.getBytes());
+        clientSocket.close();
     }
 
     public static void main(String[] args) throws IOException {
-        HttpServer server = new HttpServer(8080);
-        server.setContentRoot(new File("src/main/resources"));
-    }
+        Properties properties = new Properties();
+        try (FileReader fileReader = new FileReader("./pgr203.properties")) {
+            properties.load(fileReader);
+        } catch (Exception e) {
+            logger.error("pgr203.properties file missing!");
+            File contentRoot = new File("./");
+            System.out.println("Please create pgr203.properties file in" + contentRoot.getAbsolutePath() + " and assign database url, username and password {}");
+        }
 
-    public void setContentRoot(File contentRoot) {
-        this.contentRoot = contentRoot;
-    }
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setURL(properties.getProperty("dataSource.url"));
+        dataSource.setUser(properties.getProperty("dataSource.username"));
+        dataSource.setPassword(properties.getProperty("dataSource.password"));
 
-    public List<String> getMembers() {
-        return members;
+        logger.info("Using database: {}", dataSource.getUrl());
+        Flyway.configure().dataSource(dataSource).load().migrate();
+
+        HttpServer server = new HttpServer(8080, dataSource);
     }
 }
