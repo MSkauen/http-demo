@@ -1,26 +1,29 @@
 package no.kristiania.http;
 
-import no.kristiania.database.Project;
+import no.kristiania.database.Member;
+import no.kristiania.database.MemberDao;
 import no.kristiania.database.ProjectDao;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
 
-public class ProjectGetController implements HttpController {
+public class MemberGetController implements HttpController {
 
-    private ProjectDao projectDao;
+    private MemberDao memberDao;
 
-    public ProjectGetController(ProjectDao projectDao) {
-        this.projectDao = projectDao;
+    public MemberGetController(MemberDao memberDao) {
+        this.memberDao = memberDao;
     }
 
     @Override
     public void handle(HttpMessage request, Socket clientSocket) throws IOException, SQLException {
         String body = "<ul>";
-        for (Project project : projectDao.list()) {
-            body += "<li>" + project.getName() + " " + project.getColor() + " " + project.getStatus() + "</li>";
+
+        for (Member member : memberDao.list()) {
+            body += "<li>" + member.getFirstName() + " " + member.getLastName() + " " + member.getEmailAddress() + "</li>";
         }
+
         body += "</ul>";
         String response = "HTTP/1.1 200 OK\r\n" +
                 "Content-Length: " + body.length() + "\r\n" +

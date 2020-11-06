@@ -14,11 +14,12 @@ public class ProjectDao extends AbstractDao<Project> {
     public void insert(Project project) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO projects (project_name, project_color) values (?, ?)",
+                    "INSERT INTO projects (project_name, project_color, project_status) values (?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             )) {
                 statement.setString(1, project.getName());
                 statement.setString(2, project.getColor());
+                statement.setString(3, project.getStatus());
                 statement.executeUpdate();
 
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
@@ -53,6 +54,7 @@ public class ProjectDao extends AbstractDao<Project> {
         project.setId(rs.getLong("id"));
         project.setName(rs.getString("project_name"));
         project.setColor(rs.getString("project_color"));
+        project.setStatus(rs.getString("project_status"));
         return project;
     }
 }

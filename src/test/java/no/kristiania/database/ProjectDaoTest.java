@@ -49,6 +49,7 @@ public class ProjectDaoTest {
         Project project = new Project();
         project.setName(exampleProjectName());
         project.setColor(exampleProjectColor());
+        project.setStatus(exampleProjectStatus());
         return project;
     }
     private String exampleProjectName(){
@@ -58,5 +59,9 @@ public class ProjectDaoTest {
     private String exampleProjectColor(){
         String[] projectNameOptions = {"#d2caca", "#5a3434", "#1d901d", "#751d90"};
         return projectNameOptions[random.nextInt(projectNameOptions.length)];
+    }
+    private String exampleProjectStatus(){
+        String[] projectStatusOptions = {"To-do", "In progress", "Completed"};
+        return projectStatusOptions[random.nextInt(projectStatusOptions.length)];
     }
 }

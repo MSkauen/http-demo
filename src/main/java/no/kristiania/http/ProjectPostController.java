@@ -26,9 +26,11 @@ public class ProjectPostController implements HttpController {
         Project project = new Project();
         String projectNameDecoded = URLDecoder.decode(requestParameters.getParameter("project_name"), StandardCharsets.UTF_8);
         String projectColorDecoded = URLDecoder.decode(requestParameters.getParameter("project_color"), StandardCharsets.UTF_8);
+        String projectStatusDecoded = URLDecoder.decode(requestParameters.getParameter("project_status"), StandardCharsets.UTF_8);
 
         project.setColor(projectColorDecoded);
         project.setName(projectNameDecoded);
+        project.setStatus(projectStatusDecoded);
 
         projectDao.insert(project);
 

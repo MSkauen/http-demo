@@ -20,12 +20,14 @@ class HttpServerTest {
 
     private final JdbcDataSource dataSource = new JdbcDataSource();
     private HttpServer server;
+    private MemberDao memberDao;
 
     @BeforeEach
     void setUp() throws IOException {
         dataSource.setURL("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
         Flyway.configure().dataSource(dataSource).load().migrate();
         server = new HttpServer(0, dataSource);
+        memberDao = new MemberDao(dataSource);
     }
 
     @Test
@@ -87,10 +89,9 @@ class HttpServerTest {
         String requestBody = "first_name=test&last_name=bruker&email_address=test@email.no";
         HttpClient client = new HttpClient("localhost", server.getPort(), "/api/members/newMember", "POST", requestBody);
         assertEquals(200, client.getStatusCode());
-        assertThat(server.getMembers())
-                .filteredOn(member -> member.getFirstName().equals("test"))
-                .isNotEmpty()
-                .satisfies(p -> assertThat(p.get(0).getLastName()).isEqualTo("bruker"));
+        assertThat(memberDao.list())
+                .extracting(Member::getFirstName)
+                .contains("test");
     }
 
     @Test
@@ -106,11 +107,11 @@ class HttpServerTest {
     }
     @Test
     void shouldPostNewProject() throws IOException {
-        String requestBody = "project_name=test&project_color=#5a3434";
+        String requestBody = "project_name=test&project_color=#5a3434&project_status=To-Do";
         HttpClient postClient = new HttpClient("localhost", server.getPort(), "/api/projects/newProject", "POST", requestBody);
         assertEquals(200, postClient.getStatusCode());
 
         HttpClient getClient = new HttpClient("localhost", server.getPort(), "/api/projects/listProjects");
-        assertThat(getClient.getResponseBody()).contains("<li>test #5a3434</li>");
+        assertThat(getClient.getResponseBody()).contains("<li>test #5a3434 To-Do</li>");
     }
 }

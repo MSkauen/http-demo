@@ -1,6 +1,5 @@
 package no.kristiania.http;
 
-import no.kristiania.database.Member;
 import no.kristiania.database.MemberDao;
 import no.kristiania.database.ProjectDao;
 import org.flywaydb.core.Flyway;
@@ -12,10 +11,7 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -25,13 +21,14 @@ public class HttpServer {
 
     private Map<String, HttpController> controllers;
 
-    private MemberDao memberDao;
     private final ServerSocket serverSocket;
 
     public HttpServer(int port, DataSource dataSource) throws IOException {
-        memberDao = new MemberDao(dataSource);
+        MemberDao memberDao = new MemberDao(dataSource);
         ProjectDao projectDao = new ProjectDao(dataSource);
         controllers = Map.of(
+                "/api/members/newMember", new MemberPostController(memberDao),
+                "/api/members/listMembers", new MemberGetController(memberDao),
                 "/api/projects/newProject", new ProjectPostController(projectDao),
                 "/api/projects/listProjects", new ProjectGetController(projectDao)
         );
@@ -39,9 +36,9 @@ public class HttpServer {
         serverSocket = new ServerSocket(port);
         logger.warn("Server started on port {}", serverSocket.getLocalPort());
 
-        System.out.println("Server running on port: " + serverSocket.getLocalPort()
-                + "\r\n Access server using any IP-Address:" + serverSocket.getLocalPort() + ", e.g 127.0.0.1:"
-                + serverSocket.getLocalPort() + " or localhost:" + serverSocket.getLocalPort());
+        System.out.println("Server running on port:" + serverSocket.getLocalPort()
+                + "\r\n Access server using any IP-Address:" + serverSocket.getLocalPort() + ", e.g http://127.0.0.1:"
+                + serverSocket.getLocalPort() + " or http://localhost:" + serverSocket.getLocalPort());
         new Thread(() -> {
             while (true) {
                 try (Socket clientSocket = serverSocket.accept()) {
@@ -70,8 +67,9 @@ public class HttpServer {
         String requestPath = questionPos != -1 ? requestTarget.substring(0, questionPos) : requestTarget;
 
         if (requestMethod.equals("POST")) {
-            if (requestPath.equals("/api/members/newMember")) {
-                handlePostMember(clientSocket, request);
+            HttpController controller = controllers.get(requestPath);
+            if (controller != null) {
+                controller.handle(request, clientSocket);
             } else {
                getController(requestPath).handle(request, clientSocket);
             }
@@ -80,8 +78,6 @@ public class HttpServer {
                 handleEchoRequest(clientSocket, requestTarget, questionPos);
             } else if (requestPath.equals("/")){
                 handleFileRequest(clientSocket, "/index.html");
-            } else if (requestPath.equals("/api/members/listMembers")) {
-                handleGetMembers(clientSocket);
             } else {
                 HttpController controller = controllers.get(requestPath);
                 if (controller != null) {
@@ -96,35 +92,6 @@ public class HttpServer {
 
     private HttpController getController(String requestPath) {
         return controllers.get(requestPath);
-    }
-
-    private void handlePostMember(Socket clientSocket, HttpMessage request) throws SQLException, IOException {
-        QueryString requestParameters = new QueryString(request.getBody());
-
-        String firstName = requestParameters.getParameter("first_name");
-        String lastName = requestParameters.getParameter("last_name");
-        String emailAddress = requestParameters.getParameter("email_address");
-
-        if (firstName != null | lastName != null |  emailAddress != null) {
-            String firstNameDecoded = URLDecoder.decode(firstName, StandardCharsets.UTF_8);
-            String lastNameDecoded = URLDecoder.decode(lastName, StandardCharsets.UTF_8);
-            String emailAddressDecoded = URLDecoder.decode(emailAddress, StandardCharsets.UTF_8);
-
-            Member member = new Member();
-            member.setFirstName(firstNameDecoded);
-            member.setLastName(lastNameDecoded);
-            member.setEmailAddress(emailAddressDecoded);
-            memberDao.insert(member);
-        }
-
-        String body = "Ok";
-        String response = "HTTP/1.1 200 OK\r\n" +
-                "Content-Length: " + body.length() + "\r\n" +
-                "Connection: close\r\n" +
-                "\r\n" +
-                body;
-
-        clientSocket.getOutputStream().write(response.getBytes());
     }
 
     private void handleFileRequest(Socket clientSocket, String requestPath) throws IOException {
@@ -163,25 +130,6 @@ public class HttpServer {
             clientSocket.getOutputStream().write(response.getBytes());
             clientSocket.getOutputStream().write(buffer.toByteArray());
         }
-    }
-
-    private void handleGetMembers(Socket clientSocket) throws IOException, SQLException {
-        String body = "<ul>";
-
-        for (Member member : memberDao.list()) {
-            body += "<li>" + member.getFirstName() + " " + member.getLastName() + " " + member.getEmailAddress() + "</li>";
-        }
-
-        body += "</ul>";
-        String response = "HTTP/1.1 200 OK\r\n" +
-                "Content-Length: " + body.length() + "\r\n" +
-                "Content-Type: text/html\r\n" +
-                "Connection: close\r\n" +
-                "\r\n" +
-                body;
-
-        // Write the response back to the client
-        clientSocket.getOutputStream().write(response.getBytes());
     }
 
     private void handleEchoRequest(Socket clientSocket, String requestTarget, int questionPos) throws IOException {
@@ -227,9 +175,5 @@ public class HttpServer {
         Flyway.configure().dataSource(dataSource).load().migrate();
 
         HttpServer server = new HttpServer(8080, dataSource);
-    }
-
-    public List<Member> getMembers() throws SQLException {
-        return memberDao.list();
     }
 }
